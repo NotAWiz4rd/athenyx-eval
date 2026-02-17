@@ -8,15 +8,20 @@ Usage:
     Defaults to ./testcases/ if nothing is specified.
 
 Options:
-    --base-url URL    Athenyx backend URL  (default: http://localhost:8000)
-    --verbose, -v     Chatty per-testcase logging (request/response details)
-    --api-key KEY     API key for the backend (or set ATHENYX_API_KEY env var)
-    --tag TAG         Only run testcases that have this tag (repeatable)
+    --base-url URL      Athenyx backend URL  (default: http://localhost:8000)
+    --verbose, -v       Chatty per-testcase logging (request/response details)
+    --api-key KEY       API key for the backend (or set ATHENYX_API_KEY env var)
+    --tag TAG           Only run testcases that have this tag (repeatable)
+    --concurrency N, -j N
+                        Max parallel requests (default: 10)
+    --retries N         Retries on network/5xx errors, with exponential backoff
+                        (default: 3)
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import os
 import sys
 import time
@@ -25,6 +30,10 @@ from pathlib import Path
 
 import httpx
 import yaml
+
+DEFAULT_CONCURRENCY = 10
+DEFAULT_RETRIES = 3
+BACKOFF_BASE = 0.5  # seconds; delay for attempt n = BACKOFF_BASE * 2^(n-1)
 
 
 # ── Testcase loading ─────────────────────────────────────────────────────────
@@ -93,22 +102,37 @@ def build_request_body(tc: dict) -> dict:
     return body
 
 
-def call_intervene(
-    client: httpx.Client,
+async def call_intervene(
+    client: httpx.AsyncClient,
     base_url: str,
     body: dict,
+    retries: int,
+    verbose: bool = False,
+    tc_id: str = "",
 ) -> tuple[dict | None, float, str | None]:
-    """POST to /v0/intervene. Returns (response_json, latency_seconds, error_string)."""
+    """POST to /v0/intervene with retries. Returns (response_json, latency_seconds, error_string)."""
     url = f"{base_url}/v0/intervene"
     t0 = time.monotonic()
-    try:
-        resp = client.post(url, json=body)
-        latency = time.monotonic() - t0
-        if resp.status_code != 200:
-            return None, latency, f"HTTP {resp.status_code}: {resp.text[:200]}"
-        return resp.json(), latency, None
-    except httpx.RequestError as exc:
-        return None, time.monotonic() - t0, str(exc)
+    last_error: str | None = None
+
+    for attempt in range(retries + 1):
+        if attempt > 0:
+            delay = BACKOFF_BASE * (2 ** (attempt - 1))
+            if verbose:
+                _clear_progress()
+                print(f"  ... {tc_id}: retry {attempt}/{retries} (backoff {delay:.1f}s)")
+            await asyncio.sleep(delay)
+        try:
+            resp = await client.post(url, json=body)
+            if resp.status_code == 200:
+                return resp.json(), time.monotonic() - t0, None
+            last_error = f"HTTP {resp.status_code}: {resp.text[:200]}"
+            if resp.status_code < 500:
+                break  # client error — don't retry
+        except httpx.RequestError as exc:
+            last_error = str(exc)
+
+    return None, time.monotonic() - t0, last_error
 
 
 # ── Evaluation ───────────────────────────────────────────────────────────────
@@ -190,7 +214,7 @@ def _fmt_duration(secs: float) -> str:
     return f"~{secs / 60:.1f}m"
 
 
-def show_progress(done: int, total: int, avg_latency: float) -> None:
+def show_progress(done: int, total: int, avg_latency: float, concurrency: int = 1) -> None:
     global _progress_line_len
     pct = done / total
     bar_width = 28
@@ -202,7 +226,8 @@ def show_progress(done: int, total: int, avg_latency: float) -> None:
     if done == total:
         suffix = "  done"
     elif avg_latency > 0 and remaining > 0:
-        suffix = f"  ETA {_fmt_duration(avg_latency * remaining)}"
+        eta_secs = avg_latency * remaining / concurrency
+        suffix = f"  ETA {_fmt_duration(eta_secs)}"
     else:
         suffix = ""
 
@@ -260,7 +285,47 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--api-key", default=os.environ.get("ATHENYX_API_KEY"))
     p.add_argument("--verbose", "-v", action="store_true")
     p.add_argument("--tag", action="append", dest="tags")
+    p.add_argument(
+        "--concurrency", "-j", type=int, default=DEFAULT_CONCURRENCY, metavar="N",
+        help=f"Max parallel requests (default: {DEFAULT_CONCURRENCY})",
+    )
+    p.add_argument(
+        "--retries", type=int, default=DEFAULT_RETRIES, metavar="N",
+        help=f"Retries on network/5xx errors with exponential backoff (default: {DEFAULT_RETRIES})",
+    )
     return p.parse_args()
+
+
+async def _run(cases: list[dict], headers: dict, args: argparse.Namespace) -> int:
+    total = len(cases)
+    summary = Summary()
+    sem = asyncio.Semaphore(args.concurrency)
+
+    concurrency = args.concurrency
+    show_progress(0, total, 0.0, concurrency)
+
+    async with httpx.AsyncClient(headers=headers, timeout=30.0) as client:
+
+        async def run_one(tc: dict) -> None:
+            async with sem:
+                body = build_request_body(tc)
+                if args.verbose:
+                    _clear_progress()
+                    print(f"  >>> {tc['id']}: POST /v0/intervene  mode={body['mode']}")
+
+                resp, latency, error = await call_intervene(
+                    client, args.base_url, body, args.retries, args.verbose, tc["id"]
+                )
+                result = evaluate_response(tc, resp, latency, error)
+                summary.results.append(result)
+                print_result(result, args.verbose)
+                show_progress(len(summary.results), total, summary.avg_latency, concurrency)
+
+        await asyncio.gather(*[run_one(tc) for tc in cases])
+
+    _clear_progress()
+    print_summary(summary)
+    return 0 if summary.failed == 0 else 1
 
 
 def main() -> None:
@@ -268,7 +333,10 @@ def main() -> None:
     tags = set(args.tags) if args.tags else None
 
     cases = load_testcases(args.paths, tags)
-    print(f"Loaded {len(cases)} testcase(s)\n")
+    print(
+        f"Loaded {len(cases)} testcase(s)"
+        f"  [concurrency={args.concurrency}  retries={args.retries}]\n"
+    )
 
     if not cases:
         sys.exit(0)
@@ -277,25 +345,7 @@ def main() -> None:
     if args.api_key:
         headers["Authorization"] = f"Bearer {args.api_key}"
 
-    total = len(cases)
-    summary = Summary()
-    show_progress(0, total, 0.0)
-    with httpx.Client(headers=headers, timeout=30.0) as client:
-        for i, tc in enumerate(cases, 1):
-            body = build_request_body(tc)
-            if args.verbose:
-                _clear_progress()
-                print(f"  >>> {tc['id']}: POST /v0/intervene  mode={body['mode']}")
-
-            resp, latency, error = call_intervene(client, args.base_url, body)
-            result = evaluate_response(tc, resp, latency, error)
-            summary.results.append(result)
-            print_result(result, args.verbose)
-            show_progress(i, total, summary.avg_latency)
-
-    _clear_progress()
-    print_summary(summary)
-    sys.exit(0 if summary.failed == 0 else 1)
+    sys.exit(asyncio.run(_run(cases, headers, args)))
 
 
 if __name__ == "__main__":
