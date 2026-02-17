@@ -171,9 +171,53 @@ def evaluate_response(tc: dict, resp: dict | None, latency: float, error: str | 
     )
 
 
+# ── Progress display ─────────────────────────────────────────────────────────
+
+_progress_line_len: int = 0
+
+
+def _clear_progress() -> None:
+    global _progress_line_len
+    if _progress_line_len:
+        sys.stdout.write(f"\r{' ' * _progress_line_len}\r")
+        sys.stdout.flush()
+        _progress_line_len = 0
+
+
+def _fmt_duration(secs: float) -> str:
+    if secs < 60:
+        return f"~{secs:.0f}s"
+    return f"~{secs / 60:.1f}m"
+
+
+def show_progress(done: int, total: int, avg_latency: float) -> None:
+    global _progress_line_len
+    pct = done / total
+    bar_width = 28
+    filled = int(bar_width * pct)
+    arrow = ">" if filled < bar_width else ""
+    bar = "=" * filled + arrow + " " * (bar_width - filled - len(arrow))
+
+    remaining = total - done
+    if done == total:
+        suffix = "  done"
+    elif avg_latency > 0 and remaining > 0:
+        suffix = f"  ETA {_fmt_duration(avg_latency * remaining)}"
+    else:
+        suffix = ""
+
+    avg_str = f"  avg {avg_latency:.2f}s" if avg_latency > 0 else ""
+    line = f"  [{bar}] {done}/{total} ({pct:.0%}){avg_str}{suffix}"
+    sys.stdout.write(f"\r{line}")
+    sys.stdout.flush()
+    _progress_line_len = len(line) + 1  # +1 for the leading \r
+
+
 # ── Output formatting ────────────────────────────────────────────────────────
 
 def print_result(r: Result, verbose: bool) -> None:
+    _clear_progress()
+
     status = "PASS" if r.passed else "FAIL"
     line = f"  [{status}] {r.tc_id}"
 
@@ -233,18 +277,23 @@ def main() -> None:
     if args.api_key:
         headers["Authorization"] = f"Bearer {args.api_key}"
 
+    total = len(cases)
     summary = Summary()
+    show_progress(0, total, 0.0)
     with httpx.Client(headers=headers, timeout=30.0) as client:
-        for tc in cases:
+        for i, tc in enumerate(cases, 1):
             body = build_request_body(tc)
             if args.verbose:
+                _clear_progress()
                 print(f"  >>> {tc['id']}: POST /v0/intervene  mode={body['mode']}")
 
             resp, latency, error = call_intervene(client, args.base_url, body)
             result = evaluate_response(tc, resp, latency, error)
             summary.results.append(result)
             print_result(result, args.verbose)
+            show_progress(i, total, summary.avg_latency)
 
+    _clear_progress()
     print_summary(summary)
     sys.exit(0 if summary.failed == 0 else 1)
 
