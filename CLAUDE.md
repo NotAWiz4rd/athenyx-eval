@@ -28,6 +28,9 @@ python run_eval.py -v
 # Point at a different backend
 python run_eval.py --base-url http://staging:8000
 
+# Tune concurrency and retries (defaults: 10 / 3)
+python run_eval.py -j 20 --retries 5
+
 # Lint
 ruff check .
 
@@ -40,9 +43,10 @@ pytest
 Single-script eval runner (`run_eval.py`) with no package structure:
 
 1. **Testcase loading** — Reads YAML files from `testcases/` (or user-specified paths). Each file can contain a single dict, a list, or multiple YAML documents (`---`-separated). Required fields per testcase: `model_output`, `expected.decision`. Optional: `id`, `description`, `tags`, `previous_messages`, `mode`, `agent_id`, `metadata`.
-2. **API interaction** — Builds an `InterveneRequest` body and POSTs to `/v0/intervene` on the Athenyx backend. Auth via `--api-key` flag or `ATHENYX_API_KEY` env var.
+2. **API interaction** — Builds an `InterveneRequest` body and POSTs to `/v0/intervene` on the Athenyx backend. Auth via `--api-key` flag or `ATHENYX_API_KEY` env var. Requests run concurrently via `asyncio` + `httpx.AsyncClient`, bounded by `--concurrency` (default 10). Failed requests are retried up to `--retries` times (default 3) with exponential backoff (0.5s, 1s, 2s, …); HTTP 4xx errors are not retried.
 3. **Evaluation** — Compares `response.decision` against `expected.decision`. Collects pass/fail/error counts and latency stats.
-4. **Exit code** — 0 if all testcases pass, 1 otherwise.
+4. **Progress display** — Live progress bar showing `done/total (pct%)`, mean latency, and ETA (adjusted for concurrency: `avg_latency × remaining / concurrency`).
+5. **Exit code** — 0 if all testcases pass, 1 otherwise.
 
 The API schema is captured in `openapi.json` (Athenyx v0.1 API spec). Key response fields: `decision` (allow/coach/block) and optional `coaching_prompt`.
 
