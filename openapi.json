@@ -1,0 +1,2584 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Athenyx v0.1 API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v0/intervene": {
+      "post": {
+        "tags": [
+          "v0"
+        ],
+        "summary": "Intervene",
+        "description": "Core Athenyx v0.1 endpoint:\n- Inspect model_output (+ optionally messages/metadata)\n- Decide whether to allow, coach, or block\n- Persist intervention data to MongoDB\n- Return decision and optional coaching_prompt",
+        "operationId": "intervene_v0_intervene_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterveneRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterventionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/overview": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get System Overview",
+        "description": "Get system-wide overview statistics including aggregate metrics,\ndetection rates, and recent activity.",
+        "operationId": "get_system_overview_v0_dashboard_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date for statistics (ISO 8601)",
+              "title": "Start Date"
+            },
+            "description": "Start date for statistics (ISO 8601)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date for statistics (ISO 8601)",
+              "title": "End Date"
+            },
+            "description": "End date for statistics (ISO 8601)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/metrics/hourly": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Hourly Metrics",
+        "description": "Get hourly time-series metrics (last 24-168 hours).",
+        "operationId": "get_hourly_metrics_v0_dashboard_metrics_hourly_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 168,
+              "minimum": 1,
+              "description": "Number of hours to return",
+              "default": 24,
+              "title": "Limit"
+            },
+            "description": "Number of hours to return"
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by specific agent",
+              "title": "Agent Id"
+            },
+            "description": "Filter by specific agent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsTimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/metrics/daily": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Daily Metrics",
+        "description": "Get daily time-series metrics (last 30-90 days).",
+        "operationId": "get_daily_metrics_v0_dashboard_metrics_daily_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "description": "Number of days to return",
+              "default": 30,
+              "title": "Limit"
+            },
+            "description": "Number of days to return"
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by specific agent",
+              "title": "Agent Id"
+            },
+            "description": "Filter by specific agent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsTimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/metrics/weekly": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Weekly Metrics",
+        "description": "Get weekly time-series metrics (last 12-52 weeks).",
+        "operationId": "get_weekly_metrics_v0_dashboard_metrics_weekly_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 52,
+              "minimum": 1,
+              "description": "Number of weeks to return",
+              "default": 12,
+              "title": "Limit"
+            },
+            "description": "Number of weeks to return"
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by specific agent",
+              "title": "Agent Id"
+            },
+            "description": "Filter by specific agent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsTimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/agents": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Agents",
+        "description": "Get list of agent profiles with filtering and sorting options.",
+        "operationId": "get_agents_v0_dashboard_agents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "risk_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by risk level",
+              "title": "Risk Level"
+            },
+            "description": "Filter by risk level"
+          },
+          {
+            "name": "is_repeat_offender",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by repeat offender status",
+              "title": "Is Repeat Offender"
+            },
+            "description": "Filter by repeat offender status"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "misalignment_rate",
+                "total_interventions",
+                "last_seen"
+              ],
+              "type": "string",
+              "description": "Field to sort by",
+              "default": "last_seen",
+              "title": "Sort By"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "description": "Sort order",
+              "default": "desc",
+              "title": "Order"
+            },
+            "description": "Sort order"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Maximum number of agents to return",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Maximum number of agents to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/agents/{agent_id}": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Agent Detail",
+        "description": "Get detailed profile for a specific agent.",
+        "operationId": "get_agent_detail_v0_dashboard_agents__agent_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentProfileDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/agents/{agent_id}/interventions": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Agent Interventions",
+        "description": "Get intervention history for a specific agent with pagination.",
+        "operationId": "get_agent_interventions_v0_dashboard_agents__agent_id__interventions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date filter (ISO 8601)",
+              "title": "Start Date"
+            },
+            "description": "Start date filter (ISO 8601)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date filter (ISO 8601)",
+              "title": "End Date"
+            },
+            "description": "End date filter (ISO 8601)"
+          },
+          {
+            "name": "is_misaligned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by misalignment status",
+              "title": "Is Misaligned"
+            },
+            "description": "Filter by misalignment status"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Maximum results",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum results"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Pagination offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Pagination offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentInterventionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/agents/{agent_id}/timeline": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Agent Timeline",
+        "description": "Get daily aggregated metrics for an agent (trend data).",
+        "operationId": "get_agent_timeline_v0_dashboard_agents__agent_id__timeline_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "agent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Agent Id"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date (ISO 8601)",
+              "title": "Start Date"
+            },
+            "description": "Start date (ISO 8601)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date (ISO 8601)",
+              "title": "End Date"
+            },
+            "description": "End date (ISO 8601)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentTimelineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/alerts/summary": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Alert Summary",
+        "description": "Get alert counts grouped by status, severity, and type.",
+        "operationId": "get_alert_summary_v0_dashboard_alerts_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date (ISO 8601)",
+              "title": "Start Date"
+            },
+            "description": "Start date (ISO 8601)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date (ISO 8601)",
+              "title": "End Date"
+            },
+            "description": "End date (ISO 8601)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSummaryByCategory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/alerts": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Alerts",
+        "description": "Get alerts with multiple filtering options.",
+        "operationId": "get_alerts_v0_dashboard_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "new",
+                    "acknowledged",
+                    "resolved",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by alert status",
+              "title": "Status"
+            },
+            "description": "Filter by alert status"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by severity",
+              "title": "Severity"
+            },
+            "description": "Filter by severity"
+          },
+          {
+            "name": "alert_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "high_risk",
+                    "repeat_offender",
+                    "spike_detected",
+                    "pattern_detected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by alert type",
+              "title": "Alert Type"
+            },
+            "description": "Filter by alert type"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start date filter (ISO 8601)",
+              "title": "Start Date"
+            },
+            "description": "Start date filter (ISO 8601)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End date filter (ISO 8601)",
+              "title": "End Date"
+            },
+            "description": "End date filter (ISO 8601)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Maximum results",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/alerts/{alert_id}": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Alert Detail",
+        "description": "Get detailed alert information including related intervention.",
+        "operationId": "get_alert_detail_v0_dashboard_alerts__alert_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/alerts/{alert_id}/status": {
+      "patch": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Update Alert Status",
+        "description": "Update alert status (acknowledge, resolve, or dismiss).",
+        "operationId": "update_alert_status_v0_dashboard_alerts__alert_id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlertStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/activity/recent": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Recent Activity",
+        "description": "Get recent interventions for activity feed.",
+        "operationId": "get_recent_activity_v0_dashboard_activity_recent_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Maximum number of activities",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Maximum number of activities"
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by agent",
+              "title": "Agent Id"
+            },
+            "description": "Filter by agent"
+          },
+          {
+            "name": "is_misaligned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by misalignment status",
+              "title": "Is Misaligned"
+            },
+            "description": "Filter by misalignment status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentActivityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/dashboard/api-keys": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "List Api Keys",
+        "description": "List all API keys for the organization (no hashes returned).",
+        "operationId": "list_api_keys_v0_dashboard_api_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Create Api Key",
+        "description": "Create a new API key for the organization. Requires admin role.",
+        "operationId": "create_api_key_v0_dashboard_api_keys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v0/dashboard/api-keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Revoke Api Key",
+        "description": "Revoke/deactivate an API key. Requires admin role.",
+        "operationId": "revoke_api_key_v0_dashboard_api_keys__key_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentInterventionsResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "interventions": {
+            "items": {
+              "$ref": "#/components/schemas/InterventionSummary"
+            },
+            "type": "array",
+            "title": "Interventions"
+          },
+          "pagination": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Pagination"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "interventions",
+          "pagination"
+        ],
+        "title": "AgentInterventionsResponse",
+        "description": "Response for agent interventions endpoint."
+      },
+      "AgentListResponse": {
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/AgentProfileSummary"
+            },
+            "type": "array",
+            "title": "Agents"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "filters_applied": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters Applied"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agents",
+          "total_count",
+          "filters_applied"
+        ],
+        "title": "AgentListResponse",
+        "description": "Response for agent list endpoint."
+      },
+      "AgentProfileDetailResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "total_interventions": {
+            "type": "integer",
+            "title": "Total Interventions"
+          },
+          "misaligned_count": {
+            "type": "integer",
+            "title": "Misaligned Count"
+          },
+          "blocked_count": {
+            "type": "integer",
+            "title": "Blocked Count"
+          },
+          "coached_count": {
+            "type": "integer",
+            "title": "Coached Count"
+          },
+          "false_positive_count": {
+            "type": "integer",
+            "title": "False Positive Count"
+          },
+          "misalignment_rate": {
+            "type": "number",
+            "title": "Misalignment Rate"
+          },
+          "avg_risk_score": {
+            "type": "number",
+            "title": "Avg Risk Score"
+          },
+          "compliance_score": {
+            "type": "number",
+            "title": "Compliance Score"
+          },
+          "common_violations": {
+            "items": {
+              "$ref": "#/components/schemas/ViolationTypeResponse"
+            },
+            "type": "array",
+            "title": "Common Violations"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Risk Level"
+          },
+          "is_repeat_offender": {
+            "type": "boolean",
+            "title": "Is Repeat Offender"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen"
+          },
+          "last_analyzed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Analyzed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "total_interventions",
+          "misaligned_count",
+          "blocked_count",
+          "coached_count",
+          "false_positive_count",
+          "misalignment_rate",
+          "avg_risk_score",
+          "compliance_score",
+          "common_violations",
+          "risk_level",
+          "is_repeat_offender",
+          "first_seen",
+          "last_seen",
+          "last_analyzed_at"
+        ],
+        "title": "AgentProfileDetailResponse",
+        "description": "Detailed agent profile for detail views."
+      },
+      "AgentProfileSummary": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "total_interventions": {
+            "type": "integer",
+            "title": "Total Interventions"
+          },
+          "misaligned_count": {
+            "type": "integer",
+            "title": "Misaligned Count"
+          },
+          "misalignment_rate": {
+            "type": "number",
+            "title": "Misalignment Rate"
+          },
+          "avg_risk_score": {
+            "type": "number",
+            "title": "Avg Risk Score"
+          },
+          "compliance_score": {
+            "type": "number",
+            "title": "Compliance Score"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Risk Level"
+          },
+          "is_repeat_offender": {
+            "type": "boolean",
+            "title": "Is Repeat Offender"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "total_interventions",
+          "misaligned_count",
+          "misalignment_rate",
+          "avg_risk_score",
+          "compliance_score",
+          "risk_level",
+          "is_repeat_offender",
+          "first_seen",
+          "last_seen"
+        ],
+        "title": "AgentProfileSummary",
+        "description": "Agent profile summary for list views."
+      },
+      "AgentTimelineDataPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Date"
+          },
+          "total_interventions": {
+            "type": "integer",
+            "title": "Total Interventions"
+          },
+          "misaligned_count": {
+            "type": "integer",
+            "title": "Misaligned Count"
+          },
+          "detection_rate": {
+            "type": "number",
+            "title": "Detection Rate"
+          },
+          "avg_risk_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Risk Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "total_interventions",
+          "misaligned_count",
+          "detection_rate",
+          "avg_risk_score"
+        ],
+        "title": "AgentTimelineDataPoint",
+        "description": "Single data point in agent timeline."
+      },
+      "AgentTimelineResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "date_range": {
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": "object",
+            "title": "Date Range"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/AgentTimelineDataPoint"
+            },
+            "type": "array",
+            "title": "Timeline"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "date_range",
+          "timeline"
+        ],
+        "title": "AgentTimelineResponse",
+        "description": "Response for agent timeline endpoint."
+      },
+      "AlertDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "alert_type": {
+            "type": "string",
+            "enum": [
+              "high_risk",
+              "repeat_offender",
+              "spike_detected",
+              "pattern_detected"
+            ],
+            "title": "Alert Type"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Severity"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          },
+          "intervention_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intervention Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "acknowledged",
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status"
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "related_intervention": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterventionSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "alert_type",
+          "severity",
+          "title",
+          "description",
+          "data",
+          "intervention_id",
+          "agent_id",
+          "status",
+          "acknowledged_at",
+          "resolved_at",
+          "created_at"
+        ],
+        "title": "AlertDetailResponse",
+        "description": "Detailed alert for detail views."
+      },
+      "AlertListResponse": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertSummaryResponse"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "filters_applied": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters Applied"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alerts",
+          "total_count",
+          "filters_applied"
+        ],
+        "title": "AlertListResponse",
+        "description": "Response for alert list endpoint."
+      },
+      "AlertSummaryByCategory": {
+        "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_severity": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Severity"
+          },
+          "by_type": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Type"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "date_range": {
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": "object",
+            "title": "Date Range"
+          }
+        },
+        "type": "object",
+        "required": [
+          "by_status",
+          "by_severity",
+          "by_type",
+          "total_count",
+          "date_range"
+        ],
+        "title": "AlertSummaryByCategory",
+        "description": "Alert counts by various categories."
+      },
+      "AlertSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "alert_type": {
+            "type": "string",
+            "enum": [
+              "high_risk",
+              "repeat_offender",
+              "spike_detected",
+              "pattern_detected"
+            ],
+            "title": "Alert Type"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "title": "Severity"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "acknowledged",
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "alert_type",
+          "severity",
+          "title",
+          "description",
+          "agent_id",
+          "status",
+          "created_at"
+        ],
+        "title": "AlertSummaryResponse",
+        "description": "Alert summary for list views."
+      },
+      "ApiKeyCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ApiKeyCreateRequest",
+        "description": "Request to create a new API key."
+      },
+      "ApiKeyCreateResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "key_id",
+          "name",
+          "created_at"
+        ],
+        "title": "ApiKeyCreateResponse",
+        "description": "Response after creating an API key (raw key shown once)."
+      },
+      "ApiKeyListResponse": {
+        "properties": {
+          "keys": {
+            "items": {
+              "$ref": "#/components/schemas/ApiKeySummary"
+            },
+            "type": "array",
+            "title": "Keys"
+          }
+        },
+        "type": "object",
+        "required": [
+          "keys"
+        ],
+        "title": "ApiKeyListResponse",
+        "description": "Response for API key list endpoint."
+      },
+      "ApiKeySummary": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "name",
+          "created_at",
+          "last_used_at",
+          "is_active"
+        ],
+        "title": "ApiKeySummary",
+        "description": "API key summary (no hash returned)."
+      },
+      "DecisionBreakdownResponse": {
+        "properties": {
+          "allow": {
+            "type": "integer",
+            "title": "Allow",
+            "default": 0
+          },
+          "coach": {
+            "type": "integer",
+            "title": "Coach",
+            "default": 0
+          },
+          "block": {
+            "type": "integer",
+            "title": "Block",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DecisionBreakdownResponse",
+        "description": "Breakdown of interventions by decision."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InterveneRequest": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "previous_messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "type": "array",
+            "title": "Previous Messages"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "coach",
+              "monitor_only",
+              "block"
+            ],
+            "title": "Mode"
+          },
+          "model_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ],
+            "title": "Model Output"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "previous_messages",
+          "mode",
+          "model_output"
+        ],
+        "title": "InterveneRequest"
+      },
+      "InterventionResponse": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "coach",
+              "block"
+            ],
+            "title": "Decision"
+          },
+          "coaching_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coaching Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "InterventionResponse"
+      },
+      "InterventionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "coach",
+              "monitor_only",
+              "block"
+            ],
+            "title": "Mode"
+          },
+          "model_output": {
+            "type": "string",
+            "title": "Model Output"
+          },
+          "is_misaligned": {
+            "type": "boolean",
+            "title": "Is Misaligned"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "coach",
+              "block"
+            ],
+            "title": "Decision"
+          },
+          "risk_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Score"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "total_latency_ms": {
+            "type": "integer",
+            "title": "Total Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "agent_id",
+          "mode",
+          "model_output",
+          "is_misaligned",
+          "reasoning",
+          "decision",
+          "risk_score",
+          "created_at",
+          "total_latency_ms"
+        ],
+        "title": "InterventionSummary",
+        "description": "Intervention summary for list views."
+      },
+      "Message": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "Message"
+      },
+      "MetricDataPointResponse": {
+        "properties": {
+          "period_type": {
+            "type": "string",
+            "enum": [
+              "hourly",
+              "daily",
+              "weekly"
+            ],
+            "title": "Period Type"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          },
+          "total_interventions": {
+            "type": "integer",
+            "title": "Total Interventions"
+          },
+          "misaligned_count": {
+            "type": "integer",
+            "title": "Misaligned Count"
+          },
+          "detection_rate": {
+            "type": "number",
+            "title": "Detection Rate"
+          },
+          "avg_latency_ms": {
+            "type": "integer",
+            "title": "Avg Latency Ms"
+          },
+          "by_mode": {
+            "$ref": "#/components/schemas/ModeBreakdownResponse"
+          },
+          "by_decision": {
+            "$ref": "#/components/schemas/DecisionBreakdownResponse"
+          },
+          "false_positive_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "False Positive Rate"
+          },
+          "false_negative_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "False Negative Rate"
+          },
+          "top_agents": {
+            "items": {
+              "$ref": "#/components/schemas/TopAgentResponse"
+            },
+            "type": "array",
+            "title": "Top Agents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period_type",
+          "period_start",
+          "period_end",
+          "total_interventions",
+          "misaligned_count",
+          "detection_rate",
+          "avg_latency_ms",
+          "by_mode",
+          "by_decision",
+          "top_agents"
+        ],
+        "title": "MetricDataPointResponse",
+        "description": "Single time-series data point."
+      },
+      "MetricsTimeSeriesResponse": {
+        "properties": {
+          "period_type": {
+            "type": "string",
+            "enum": [
+              "hourly",
+              "daily",
+              "weekly"
+            ],
+            "title": "Period Type"
+          },
+          "data_points": {
+            "items": {
+              "$ref": "#/components/schemas/MetricDataPointResponse"
+            },
+            "type": "array",
+            "title": "Data Points"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period_type",
+          "data_points",
+          "total_count"
+        ],
+        "title": "MetricsTimeSeriesResponse",
+        "description": "Time-series metrics response."
+      },
+      "ModeBreakdownResponse": {
+        "properties": {
+          "coach": {
+            "type": "integer",
+            "title": "Coach",
+            "default": 0
+          },
+          "monitor_only": {
+            "type": "integer",
+            "title": "Monitor Only",
+            "default": 0
+          },
+          "block": {
+            "type": "integer",
+            "title": "Block",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ModeBreakdownResponse",
+        "description": "Breakdown of interventions by mode."
+      },
+      "RecentActivityItem": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_misaligned": {
+            "type": "boolean",
+            "title": "Is Misaligned"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "coach",
+              "block"
+            ],
+            "title": "Decision"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "created_at",
+          "is_misaligned",
+          "decision",
+          "latency_ms"
+        ],
+        "title": "RecentActivityItem",
+        "description": "Single activity item for recent activity feed."
+      },
+      "RecentActivityResponse": {
+        "properties": {
+          "activities": {
+            "items": {
+              "$ref": "#/components/schemas/RecentActivityItem"
+            },
+            "type": "array",
+            "title": "Activities"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activities",
+          "total_count"
+        ],
+        "title": "RecentActivityResponse",
+        "description": "Response for recent activity endpoint."
+      },
+      "SystemOverviewResponse": {
+        "properties": {
+          "date_range": {
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "type": "object",
+            "title": "Date Range"
+          },
+          "total_interventions": {
+            "type": "integer",
+            "title": "Total Interventions"
+          },
+          "misaligned_count": {
+            "type": "integer",
+            "title": "Misaligned Count"
+          },
+          "detection_rate": {
+            "type": "number",
+            "title": "Detection Rate"
+          },
+          "avg_latency_ms": {
+            "type": "integer",
+            "title": "Avg Latency Ms"
+          },
+          "by_mode": {
+            "$ref": "#/components/schemas/ModeBreakdownResponse"
+          },
+          "by_decision": {
+            "$ref": "#/components/schemas/DecisionBreakdownResponse"
+          },
+          "unique_agents": {
+            "type": "integer",
+            "title": "Unique Agents"
+          },
+          "high_risk_agents": {
+            "type": "integer",
+            "title": "High Risk Agents"
+          },
+          "active_alerts": {
+            "type": "integer",
+            "title": "Active Alerts"
+          },
+          "recent_activity": {
+            "items": {
+              "$ref": "#/components/schemas/RecentActivityItem"
+            },
+            "type": "array",
+            "title": "Recent Activity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_range",
+          "total_interventions",
+          "misaligned_count",
+          "detection_rate",
+          "avg_latency_ms",
+          "by_mode",
+          "by_decision",
+          "unique_agents",
+          "high_risk_agents",
+          "active_alerts",
+          "recent_activity"
+        ],
+        "title": "SystemOverviewResponse",
+        "description": "System-wide overview statistics."
+      },
+      "TopAgentResponse": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "count"
+        ],
+        "title": "TopAgentResponse",
+        "description": "Top agent by intervention count."
+      },
+      "UpdateAlertStatusRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "acknowledged",
+              "resolved",
+              "dismissed"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UpdateAlertStatusRequest",
+        "description": "Request to update alert status."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ViolationTypeResponse": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "count"
+        ],
+        "title": "ViolationTypeResponse",
+        "description": "Common violation type for an agent."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
