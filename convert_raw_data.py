@@ -2,14 +2,12 @@
 """Convert raw benchmark JSON files into eval testcase YAML files.
 
 Walks the raw-data/ folder (recursively), reads each .json file, and writes
-1–2 testcases into testcases/generated/.
+one testcase per file into testcases/generated/.
 
 For each JSON file:
-  - If a coaching section exists, the coaching.original_response becomes a
-    testcase expected to be blocked (the pre-coaching, misaligned output).
-  - If there is NO coaching section, the raw_response is used instead.
-  - Additionally, when coaching was applied the post-coaching raw_response
-    is emitted as a second testcase expected to be allowed.
+  - model_output is taken from raw_response.
+  - expected.decision is "block" when classification.harmful_behavior is true,
+    and "allow" otherwise.
 """
 
 import json
@@ -43,7 +41,7 @@ def _extract_category_and_type(condition: str) -> tuple[str, str]:
 
 
 def convert_file(json_path: Path) -> list[dict]:
-    """Convert a single JSON benchmark file into 1–2 testcase dicts."""
+    """Convert a single JSON benchmark file into one testcase dict."""
     with open(json_path) as f:
         data = json.load(f)
 
@@ -54,55 +52,23 @@ def convert_file(json_path: Path) -> list[dict]:
     category, variant = _extract_category_and_type(condition)
 
     base_id = _sanitize_id(json_path.name)
-    coaching = data.get("coaching")
-    testcases = []
+    harmful = data.get("classification", {}).get("harmful_behavior", False)
+    decision = "block" if harmful else "allow"
+    tag = "misaligned" if harmful else "benign"
 
-    if coaching and "original_response" in coaching:
-        # Testcase 1: the original (pre-coaching) misaligned response → block
-        tc_misaligned = {
-            "id": f"{base_id}-misaligned",
-            "description": (
-                f"Pre-coaching misaligned response ({category}/{variant}, "
-                f"sample {sample_id}, model {model}). "
-                "Should be blocked."
-            ),
-            "tags": ["generated", "misaligned", category, variant],
-            "mode": "monitor_only",
-            "model_output": coaching["original_response"],
-            "expected": {"decision": "block"},
-        }
-        testcases.append(tc_misaligned)
-
-        # Testcase 2: the post-coaching corrected response → allow
-        tc_corrected = {
-            "id": f"{base_id}-corrected",
-            "description": (
-                f"Post-coaching corrected response ({category}/{variant}, "
-                f"sample {sample_id}, model {model}). "
-                "Should be allowed."
-            ),
-            "tags": ["generated", "benign", category, variant],
-            "mode": "monitor_only",
-            "model_output": data["raw_response"],
-            "expected": {"decision": "allow"},
-        }
-        testcases.append(tc_corrected)
-    else:
-        # No coaching section — use raw_response directly
-        tc = {
-            "id": f"{base_id}",
-            "description": (
-                f"Raw response ({category}/{variant}, "
-                f"sample {sample_id}, model {model})."
-            ),
-            "tags": ["generated", category, variant],
-            "mode": "monitor_only",
-            "model_output": data["raw_response"],
-            "expected": {"decision": "allow"},
-        }
-        testcases.append(tc)
-
-    return testcases
+    tc = {
+        "id": base_id,
+        "description": (
+            f"Raw response ({category}/{variant}, "
+            f"sample {sample_id}, model {model}). "
+            f"harmful_behavior={harmful}."
+        ),
+        "tags": ["generated", tag, category, variant],
+        "mode": "monitor_only",
+        "model_output": data["raw_response"],
+        "expected": {"decision": decision},
+    }
+    return [tc]
 
 
 def main():
