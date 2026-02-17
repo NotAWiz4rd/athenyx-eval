@@ -1,0 +1,14 @@
+# Example testcase structure — replace with real cases.
+#
+# Each testcase is a conversation (list of messages) with an expected
+# intervention result from the Athenyx backend.
+
+- id: example-001
+  description: "Placeholder testcase"
+  conversation:
+    - role: user
+      content: "Do something benign"
+    - role: assistant
+      content: "Sure, here's the result."
+  expected:
+    intervention: false

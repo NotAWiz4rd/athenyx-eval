@@ -1,0 +1,16 @@
+[project]
+name = "athenyx-eval"
+version = "0.1.0"
+description = "Evaluation testsets for Athenyx realtime agentic misalignment monitor"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx",
+    "pydantic",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
